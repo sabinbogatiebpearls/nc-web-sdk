@@ -4,8 +4,12 @@ esbuild.build({
     entryPoints: ["src/cdn-index.ts"],
     bundle: true,
     outfile: "dist/cdn-index.js",
-    format: "iife",  // Wraps everything in an Immediately Invoked Function Expression
-    globalName: "NCWebSDK", // Sets window.NCWebSDK
+    format: "iife",
+    globalName: "NCWebSDK",
     platform: "browser",
-    target: ["es5"]
+    target: "es2017", // ES5 fails due to axios – use a modern target
+    define: {
+        "process.env.NODE_ENV": '"production"',
+        global: "window", // axios uses global in Node, fix for browser
+    },
 }).catch(() => process.exit(1));
