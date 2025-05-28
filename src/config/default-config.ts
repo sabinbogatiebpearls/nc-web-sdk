@@ -1,4 +1,4 @@
-import { InitializeConfig } from "../interfaces";
+import { InitializeConfig } from "@interfaces/index";
 
 // Configuration Constants
 export const DEFAULT_CONFIG: InitializeConfig = {

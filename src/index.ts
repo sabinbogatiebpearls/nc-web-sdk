@@ -1,5 +1,5 @@
-import { DEFAULT_CONFIG } from "./config/default-config";
-import { HTMLIFrameElement, InitializeConfig, InitializeParams, WebSDK } from "./interfaces/index";
+import { DEFAULT_CONFIG } from "@config/default-config";
+import { HTMLIFrameElement, InitializeConfig, InitializeParams, WebSDK } from "@interfaces/index";
 import axios from "axios";
 
 // Define the Enum for component names
