@@ -1,12 +1,8 @@
+import { ComponentNameEnum } from "@common/enums";
 import { DEFAULT_CONFIG } from "@config/default-config";
 import { HTMLIFrameElement, InitializeConfig, InitializeParams, WebSDK } from "@interfaces/index";
 import axios from "axios";
 
-// Define the Enum for component names
-export const ComponentNameEnum = {
-    DOC_UTILITY: 'DOC_UTILITY',
-    ON_BOARDING: 'ON_BOARDING'
-};
 
 export default function initialize({ getSessionId, config }: InitializeParams): WebSDK {
     // Merged configuration
