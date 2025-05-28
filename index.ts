@@ -15,53 +15,78 @@ export default function initialize({ getSessionId, config }: InitializeParams): 
   // State variables
   let currentSessionId: string | null = null;
   let currentIframe: HTMLIFrameElement | null = null;
-  // let sessionCheckInterval: number | null = null;
-  let tokenExpiryTime: string  = '';
+  let tokenExpiryTime: string = '';
 
+  let sessionCheckInterval: ReturnType<typeof setInterval> | null = null;
+  let expiryTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  let retryAttempts = 0;
+  const MAX_RETRIES = 3;
+
+  //-------------------------- Session Expiry Check From SetInterval --------------------------
   // const startSessionExpiryCheck = () => {
-  //   // Clear existing interval if any
   //   if (sessionCheckInterval) {
   //     clearInterval(sessionCheckInterval);
   //   }
 
-  //   // Set up new interval
   //   sessionCheckInterval = setInterval(async () => {
   //     try {
-  //       const session = await getSessionId();
-  //       console.log('session: ', session);
-  //       if (!cfg.sessionValidation(session.accessToken)) {
-  //         console.warn("Session has expired, destroying iframe");
+  //       const expiryTime = new Date(tokenExpiryTime);
+  //       const now = new Date();
+
+  //       // If session is invalid or expired
+  //       if (now >= expiryTime) {
+  //         console.warn("[Session Check] Session expired. Destroying iframe.");
   //         destroyIframe();
-  //         if (sessionCheckInterval) {
-  //           clearInterval(sessionCheckInterval);
-  //           sessionCheckInterval = null;
-  //         }
+  //         stopSessionExpiryCheck();
   //       }
   //     } catch (error) {
-  //       console.error("Error during session expiry check:", error);
+  //       console.error("[Session Check] Failed to get session:", error);
   //       destroyIframe();
-  //       if (sessionCheckInterval) {
-  //         clearInterval(sessionCheckInterval);
-  //         sessionCheckInterval = null;
-  //       }
+  //       stopSessionExpiryCheck();
   //     }
-  //   }, cfg.sessionCheckInterval); // 5 minutes in milliseconds
+  //   }, cfg.sessionCheckInterval);
   // };
 
-  const startSessionExpiryCheck = async () => {
-    const expiryTime = new Date(tokenExpiryTime);
-    console.log('expiryTime: ', expiryTime);
+    //-------------------------- Session Expiry Check From SetTimeOut --------------------------
+    const startSessionExpiryCheck = async () => {
+      try {
+        const expiryTime = new Date(tokenExpiryTime);
+        console.log('expiryTime: ', expiryTime);
+        const now = new Date();
 
-    const interval = setInterval(() => {
-      const now = new Date();
-      console.log('now: ', now);
-      console.log('now >= expiryTime: ', now >= expiryTime);
-      if (now >= expiryTime) {
-        // clearInterval(interval); // Stop checking
-        getSessionId();
+        const delay = expiryTime.getTime() - now.getTime();
+        console.log("Scheduling expiry check in", delay / (1000 * 60), "minutes");
+
+        if (expiryTimeout) {
+          clearTimeout(expiryTimeout);
+        }
+
+        expiryTimeout = setTimeout(async () => {
+          console.warn("Token expired. Getting new session...");
+
+          if (retryAttempts >= MAX_RETRIES) {
+            console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
+            stopSessionExpiryCheck();
+            destroyIframe();
+            return;
+          }
+
+          await getSessionId(); // renew or destroy iframe if fails
+          startSessionExpiryCheck(); // reschedule with the new expiry
+        }, delay);
+      } catch (err) {
+        console.error("Failed to schedule session check:", err);
+        destroyIframe(); // fallback: kill iframe on error
       }
-    }, 10000);
-  }
+    };
+
+  const stopSessionExpiryCheck = () => {
+    if (sessionCheckInterval) {
+      clearInterval(sessionCheckInterval);
+      sessionCheckInterval = null;
+    }
+  };
 
   const getAccessToken = async () => {
     try {
@@ -171,7 +196,7 @@ export default function initialize({ getSessionId, config }: InitializeParams): 
     }
   };
 
-  const logout = async() => {
+  const logout = async () => {
     try {
       const response = await axios.post(`${DEFAULT_CONFIG.baseUrls.backendServer}/auth/access-token/revoke`, {
         accessToken: currentSessionId
