@@ -30,5 +30,15 @@
     "@types/node": "^22.15.23",
     "tsc-alias": "^1.8.16",
     "typescript": "^5.8.3"
+  },
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./cdn": {
+      "default": "./dist/cdn-index.js"
+    }
   }
 }
