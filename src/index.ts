@@ -1,5 +1,5 @@
-import { DEFAULT_CONFIG } from "./configs/default-config";
-import { HTMLIFrameElement, InitializeConfig, InitializeParams, WebSDK } from "./interfaces";
+import { DEFAULT_CONFIG } from "./config/default-config";
+import { HTMLIFrameElement, InitializeConfig, InitializeParams, WebSDK } from "./interfaces/index";
 import axios from "axios";
 
 // Define the Enum for component names
@@ -15,8 +15,8 @@ export default function initialize({ getSessionId, config }: InitializeParams): 
   // State variables
   let currentSessionId: string | null = null;
   let currentIframe: HTMLIFrameElement | null = null;
-  // let sessionCheckInterval: number | null = null;
-  let tokenExpiryTime: string  = '';
+  let sessionCheckInterval: number | null = null;
+  let tokenExpiryTime: string = '';
 
   // const startSessionExpiryCheck = () => {
   //   // Clear existing interval if any
@@ -171,7 +171,7 @@ export default function initialize({ getSessionId, config }: InitializeParams): 
     }
   };
 
-  const logout = async() => {
+  const logout = async () => {
     try {
       const response = await axios.post(`${DEFAULT_CONFIG.baseUrls.backendServer}/auth/access-token/revoke`, {
         accessToken: currentSessionId
