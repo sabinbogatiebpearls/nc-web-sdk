@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ComponentNameEnum = void 0;
 exports.default = initialize;
-const default_config_1 = require("@config/default-config");
+const default_config_1 = require("./config/default-config");
 const axios_1 = __importDefault(require("axios"));
 // Define the Enum for component names
 exports.ComponentNameEnum = {
