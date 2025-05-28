@@ -60,16 +60,18 @@ export default function initialize({ getSessionId, config }: InitializeParams): 
         // clearInterval(interval); // Stop checking
         getSessionId();
       }
-    }, 10000); // Check every second (you can reduce frequency if needed)
+    }, 10000);
   }
 
-  const validateSession = async () => {
+  const getAccessToken = async () => {
     try {
       const session = await getSessionId();
+      console.log('session: ', session);
       if (!cfg.sessionValidation(session.accessToken)) {
         throw new Error("Invalid session token");
       }
       currentSessionId = session.accessToken;
+      console.log('currentSessionId: ', currentSessionId);
       tokenExpiryTime = session.accessTokenExpiry;
       return currentSessionId;
     } catch (error) {
@@ -78,7 +80,7 @@ export default function initialize({ getSessionId, config }: InitializeParams): 
     }
   };
 
-  const createIframeWithSource = (url: string, sessionId: string): Promise<HTMLIFrameElement> => {
+  const createIframeWithSource = (url: string): Promise<HTMLIFrameElement> => {
     return new Promise((resolve, reject) => {
       const container = document.getElementById(DEFAULT_CONFIG.containerId);
       if (!container) {
@@ -138,11 +140,11 @@ export default function initialize({ getSessionId, config }: InitializeParams): 
   const connect = async (componentName: string): Promise<HTMLIFrameElement | void> => {
     console.log('componentName: ', componentName);
     try {
-      const sessionId = await validateSession();
-      console.log("Initializing WebSDK with session:", sessionId);
+      const accessToken = await getAccessToken();
+      console.log("Initializing WebSDK with session:", accessToken);
 
       //Check If Opaque Token is Valid
-      if (sessionId !== "valid_token") {
+      if (!cfg.sessionValidation(accessToken)) {
         throw new Error("Opaque Token is not valid");
       }
 
@@ -162,7 +164,7 @@ export default function initialize({ getSessionId, config }: InitializeParams): 
 
 
       // Create and load the iframe in the container
-      const iframe = await createIframeWithSource(iframeUrl, sessionId);
+      const iframe = await createIframeWithSource(iframeUrl);
       return iframe;
     } catch (error) {
       console.error("Error initializing WebSDK:", error);
@@ -170,12 +172,18 @@ export default function initialize({ getSessionId, config }: InitializeParams): 
   };
 
   const logout = async() => {
-    // try {
-    //   const response = await axios.get(`${DEFAULT_CONFIG.baseUrls.backendServer}/todos/1`);
-    //   console.log('response: ', response);
-    // } catch {
-    //   throw new Error("Something went wrong while logout");
-    // }
+    try {
+      const response = await axios.post(`${DEFAULT_CONFIG.baseUrls.backendServer}/auth/access-token/revoke`, {
+        accessToken: currentSessionId
+      }, {
+        headers: {
+          "Authorization": "b13d6405f3a3214d89d150137e39267d:7471c26b6104c923e6250cf7a827e120"
+        }
+      });
+      console.log('response: ', response);
+    } catch {
+      throw new Error("Something went wrong while logout");
+    }
   }
 
   return {
