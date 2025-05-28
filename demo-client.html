@@ -2,43 +2,56 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <title>NC Web SDK Demo</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SDK CDN Demo</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 2rem;
+        #nc-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ccc;
         }
     </style>
 </head>
 
 <body>
-    <h1>NC Web SDK Loaded from jsDelivr</h1>
-    <div id="output"></div>
 
-    <!-- Load the SDK -->
+    <!-- Container for the iframe -->
+    <div id="nc-container"></div>
+
+    <!-- Load your SDK via CDN -->
     <script src="https://cdn.jsdelivr.net/gh/sabinbogatiebpearls/nc-web-sdk@dev-nawaraj/dist/cdn-index.js"></script>
 
+    <!-- SDK usage -->
     <script>
-        // Example usage - assuming the SDK attaches to window.NCWebSDK or similar
-        (async () => {
+        // Wait for script to load
+        window.addEventListener('load', async () => {
+            if (!window.NCWebSDK) {
+                console.error('NCWebSDK not loaded');
+                return;
+            }
+
             const sdk = NCWebSDK({
                 getSessionId: async () => {
+                    // Replace with actual token logic in production
                     return {
-                        accessToken: 'demo-token',
-                        accessTokenExpiry: new Date(Date.now() + 60 * 1000).toISOString()
+                        accessToken: 'your-access-token',
+                        accessTokenExpiry: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 mins from now
                     };
                 },
-                config: {}
+                config: {
+                    containerId: 'nc-container', // optional if default is 'nc-container'
+                    sessionValidation: (token) => !!token && token.length > 10 // simple validation example
+                }
             });
 
             try {
                 const iframe = await sdk.connect("DOC_UTILITY");
-                console.log("Iframe loaded successfully:", iframe);
+                console.log('Iframe connected:', iframe);
             } catch (err) {
-                console.error("SDK failed to connect:", err);
+                console.error('Error connecting SDK:', err);
             }
-        })();
+        });
     </script>
 </body>
 
