@@ -48,38 +48,51 @@ export default function initialize({ getSessionId, config }: InitializeParams): 
   //   }, cfg.sessionCheckInterval);
   // };
 
-    //-------------------------- Session Expiry Check From SetTimeOut --------------------------
-    const startSessionExpiryCheck = async () => {
-      try {
-        const expiryTime = new Date(tokenExpiryTime);
-        console.log('expiryTime: ', expiryTime);
-        const now = new Date();
+  //-------------------------- Session Expiry Check From SetTimeOut --------------------------
+  const startSessionExpiryCheck = async () => {
+    try {
+      const expiryTime = new Date(tokenExpiryTime);
+      console.log('expiryTime: ', expiryTime);
+      const now = new Date();
 
-        const delay = expiryTime.getTime() - now.getTime();
-        console.log("Scheduling expiry check in", delay / (1000 * 60), "minutes");
+      const delay = expiryTime.getTime() - now.getTime();
+      console.log("Scheduling expiry check in", delay / (1000 * 60), "minutes");
 
-        if (expiryTimeout) {
-          clearTimeout(expiryTimeout);
+      if (delay <= 0) {
+        if (retryAttempts >= MAX_RETRIES) {
+          console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
+          stopSessionExpiryCheck();
+          destroyIframe();
+          return;
         }
 
-        expiryTimeout = setTimeout(async () => {
-          console.warn("Token expired. Getting new session...");
-
-          if (retryAttempts >= MAX_RETRIES) {
-            console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
-            stopSessionExpiryCheck();
-            destroyIframe();
-            return;
-          }
-
-          await getSessionId(); // renew or destroy iframe if fails
-          startSessionExpiryCheck(); // reschedule with the new expiry
-        }, delay);
-      } catch (err) {
-        console.error("Failed to schedule session check:", err);
-        destroyIframe(); // fallback: kill iframe on error
+        retryAttempts++;
+        console.warn(`Token already expired. Attempt ${retryAttempts} of ${MAX_RETRIES}. Getting new session...`);
+        return startSessionExpiryCheck(); // Retry
       }
-    };
+
+      if (expiryTimeout) {
+        clearTimeout(expiryTimeout);
+      }
+
+      expiryTimeout = setTimeout(async () => {
+        console.warn("Token expired. Getting new session...");
+
+        if (retryAttempts >= MAX_RETRIES) {
+          console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
+          stopSessionExpiryCheck();
+          destroyIframe();
+          return;
+        }
+
+        await getSessionId(); // renew or destroy iframe if fails
+        startSessionExpiryCheck(); // reschedule with the new expiry
+      }, delay);
+    } catch (err) {
+      console.error("Failed to schedule session check:", err);
+      destroyIframe(); // fallback: kill iframe on error
+    }
+  };
 
   const stopSessionExpiryCheck = () => {
     if (sessionCheckInterval) {
