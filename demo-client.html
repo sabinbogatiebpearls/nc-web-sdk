@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>NC Web SDK Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>NC Web SDK Loaded from jsDelivr</h1>
+    <div id="output"></div>
+
+    <!-- Load the SDK -->
+    <script src="https://cdn.jsdelivr.net/gh/sabinbogatiebpearls/nc-web-sdk@dev-nawaraj/dist/cdn-index.js"></script>
+
+    <script>
+        // Example usage - assuming the SDK attaches to window.NCWebSDK or similar
+        (async () => {
+            const sdk = NCWebSDK({
+                getSessionId: async () => {
+                    return {
+                        accessToken: 'demo-token',
+                        accessTokenExpiry: new Date(Date.now() + 60 * 1000).toISOString()
+                    };
+                },
+                config: {}
+            });
+
+            try {
+                const iframe = await sdk.connect("DOC_UTILITY");
+                console.log("Iframe loaded successfully:", iframe);
+            } catch (err) {
+                console.error("SDK failed to connect:", err);
+            }
+        })();
+    </script>
+</body>
+
+</html>
