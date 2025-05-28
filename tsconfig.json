@@ -1,8 +1,10 @@
 {
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
-    "target": "es2016",
-    "module": "commonjs",
+    // "target": "es2016",
+    "target": "ES5",
+    // "module": "commonjs",
+    "module": "UMD",
     "declaration": true,
     "declarationMap": true,
     "outDir": "./dist",
@@ -14,6 +16,7 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@core/*": ["src/core/*"],
       "@common/*": ["src/common/*"],
       "@config/*": ["src/config/*"],
       "@services/*": ["src/services/*"],
