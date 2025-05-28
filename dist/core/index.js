@@ -1,3 +1,4 @@
+"use strict";
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -48,219 +49,208 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-(function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
-        define(["require", "exports", "@common/enums", "@config/default-config", "axios"], factory);
-    }
-})(function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = initialize;
-    var enums_1 = require("../common/enums");
-    var default_config_1 = require("../config/default-config");
-    var axios_1 = __importDefault(require("axios"));
-    function initialize(_a) {
-        var _this = this;
-        var getSessionId = _a.getSessionId, config = _a.config;
-        // Merged configuration
-        var cfg = __assign(__assign({}, default_config_1.DEFAULT_CONFIG), config);
-        // State variables
-        var currentSessionId = null;
-        var currentIframe = null;
-        var sessionCheckInterval = null;
-        var tokenExpiryTime = '';
-        // const startSessionExpiryCheck = () => {
-        //   // Clear existing interval if any
-        //   if (sessionCheckInterval) {
-        //     clearInterval(sessionCheckInterval);
-        //   }
-        //   // Set up new interval
-        //   sessionCheckInterval = setInterval(async () => {
-        //     try {
-        //       const session = await getSessionId();
-        //       console.log('session: ', session);
-        //       if (!cfg.sessionValidation(session.accessToken)) {
-        //         console.warn("Session has expired, destroying iframe");
-        //         destroyIframe();
-        //         if (sessionCheckInterval) {
-        //           clearInterval(sessionCheckInterval);
-        //           sessionCheckInterval = null;
-        //         }
-        //       }
-        //     } catch (error) {
-        //       console.error("Error during session expiry check:", error);
-        //       destroyIframe();
-        //       if (sessionCheckInterval) {
-        //         clearInterval(sessionCheckInterval);
-        //         sessionCheckInterval = null;
-        //       }
-        //     }
-        //   }, cfg.sessionCheckInterval); // 5 minutes in milliseconds
-        // };
-        var startSessionExpiryCheck = function () { return __awaiter(_this, void 0, void 0, function () {
-            var expiryTime, interval;
-            return __generator(this, function (_a) {
-                expiryTime = new Date(tokenExpiryTime);
-                console.log('expiryTime: ', expiryTime);
-                interval = setInterval(function () {
-                    var now = new Date();
-                    console.log('now: ', now);
-                    console.log('now >= expiryTime: ', now >= expiryTime);
-                    if (now >= expiryTime) {
-                        // clearInterval(interval); // Stop checking
-                        getSessionId();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = initialize;
+var enums_1 = require("../common/enums");
+var default_config_1 = require("../config/default-config");
+var axios_1 = __importDefault(require("axios"));
+function initialize(_a) {
+    var _this = this;
+    var getSessionId = _a.getSessionId, config = _a.config;
+    // Merged configuration
+    var cfg = __assign(__assign({}, default_config_1.DEFAULT_CONFIG), config);
+    // State variables
+    var currentSessionId = null;
+    var currentIframe = null;
+    var sessionCheckInterval = null;
+    var tokenExpiryTime = '';
+    // const startSessionExpiryCheck = () => {
+    //   // Clear existing interval if any
+    //   if (sessionCheckInterval) {
+    //     clearInterval(sessionCheckInterval);
+    //   }
+    //   // Set up new interval
+    //   sessionCheckInterval = setInterval(async () => {
+    //     try {
+    //       const session = await getSessionId();
+    //       console.log('session: ', session);
+    //       if (!cfg.sessionValidation(session.accessToken)) {
+    //         console.warn("Session has expired, destroying iframe");
+    //         destroyIframe();
+    //         if (sessionCheckInterval) {
+    //           clearInterval(sessionCheckInterval);
+    //           sessionCheckInterval = null;
+    //         }
+    //       }
+    //     } catch (error) {
+    //       console.error("Error during session expiry check:", error);
+    //       destroyIframe();
+    //       if (sessionCheckInterval) {
+    //         clearInterval(sessionCheckInterval);
+    //         sessionCheckInterval = null;
+    //       }
+    //     }
+    //   }, cfg.sessionCheckInterval); // 5 minutes in milliseconds
+    // };
+    var startSessionExpiryCheck = function () { return __awaiter(_this, void 0, void 0, function () {
+        var expiryTime, interval;
+        return __generator(this, function (_a) {
+            expiryTime = new Date(tokenExpiryTime);
+            console.log('expiryTime: ', expiryTime);
+            interval = setInterval(function () {
+                var now = new Date();
+                console.log('now: ', now);
+                console.log('now >= expiryTime: ', now >= expiryTime);
+                if (now >= expiryTime) {
+                    // clearInterval(interval); // Stop checking
+                    getSessionId();
+                }
+            }, 10000);
+            return [2 /*return*/];
+        });
+    }); };
+    var getAccessToken = function () { return __awaiter(_this, void 0, void 0, function () {
+        var session, error_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, getSessionId()];
+                case 1:
+                    session = _a.sent();
+                    console.log('session: ', session);
+                    if (!cfg.sessionValidation(session.accessToken)) {
+                        throw new Error("Invalid session token");
                     }
-                }, 10000);
-                return [2 /*return*/];
-            });
-        }); };
-        var getAccessToken = function () { return __awaiter(_this, void 0, void 0, function () {
-            var session, error_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, getSessionId()];
-                    case 1:
-                        session = _a.sent();
-                        console.log('session: ', session);
-                        if (!cfg.sessionValidation(session.accessToken)) {
-                            throw new Error("Invalid session token");
-                        }
-                        currentSessionId = session.accessToken;
-                        console.log('currentSessionId: ', currentSessionId);
-                        tokenExpiryTime = session.accessTokenExpiry;
-                        return [2 /*return*/, currentSessionId];
-                    case 2:
-                        error_1 = _a.sent();
-                        console.error("Session validation failed:", error_1);
-                        throw error_1;
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); };
-        var createIframeWithSource = function (url) {
-            return new Promise(function (resolve, reject) {
-                var container = document.getElementById(default_config_1.DEFAULT_CONFIG.containerId);
-                if (!container) {
-                    return reject(new Error("Container with ID ".concat(default_config_1.DEFAULT_CONFIG.containerId, " not found")));
-                }
-                // Check if an iframe with the same ID already exists
-                var iframe = document.getElementById(default_config_1.DEFAULT_CONFIG.iframeId);
-                if (iframe) {
-                    console.log("nc-js: Iframe already exists, reusing it.");
-                    resolve(iframe);
-                    return;
-                }
-                // If iframe doesn't exist, create it
-                iframe = document.createElement('iframe');
-                iframe.src = url;
-                iframe.id = default_config_1.DEFAULT_CONFIG.iframeId;
-                // Apply styles
-                Object.assign(iframe.style, cfg.defaultIframeStyles);
-                if (cfg.customStyles) {
-                    Object.assign(iframe.style, cfg.customStyles);
-                }
-                // Event handlers
-                iframe.onload = function () {
-                    console.log("Iframe loaded successfully");
-                    currentIframe = iframe;
-                    // Start session expiry check when iframe loads
-                    startSessionExpiryCheck();
-                    resolve(iframe);
-                };
-                iframe.onerror = function () {
-                    reject(new Error("Iframe failed to load"));
-                };
-                container.appendChild(iframe);
-            });
-        };
-        var destroyIframe = function () {
-            if (currentIframe && currentIframe.parentNode) {
-                currentIframe.parentNode.removeChild(currentIframe);
-                currentIframe = null;
+                    currentSessionId = session.accessToken;
+                    console.log('currentSessionId: ', currentSessionId);
+                    tokenExpiryTime = session.accessTokenExpiry;
+                    return [2 /*return*/, currentSessionId];
+                case 2:
+                    error_1 = _a.sent();
+                    console.error("Session validation failed:", error_1);
+                    throw error_1;
+                case 3: return [2 /*return*/];
             }
-            // Clear the session check interval when iframe is destroyed
-            if (sessionCheckInterval) {
-                clearInterval(sessionCheckInterval);
-                sessionCheckInterval = null;
+        });
+    }); };
+    var createIframeWithSource = function (url) {
+        return new Promise(function (resolve, reject) {
+            var container = document.getElementById(default_config_1.DEFAULT_CONFIG.containerId);
+            if (!container) {
+                return reject(new Error("Container with ID ".concat(default_config_1.DEFAULT_CONFIG.containerId, " not found")));
             }
-        };
-        // connect now accepts componentName to determine iframe source
-        var connect = function (componentName) { return __awaiter(_this, void 0, void 0, function () {
-            var accessToken, iframeUrl, iframe, error_2;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        console.log('componentName: ', componentName);
-                        _a.label = 1;
-                    case 1:
-                        _a.trys.push([1, 4, , 5]);
-                        return [4 /*yield*/, getAccessToken()];
-                    case 2:
-                        accessToken = _a.sent();
-                        console.log("Initializing WebSDK with session:", accessToken);
-                        //Check If Opaque Token is Valid
-                        if (!cfg.sessionValidation(accessToken)) {
-                            throw new Error("Opaque Token is not valid");
-                        }
-                        iframeUrl = void 0;
-                        console.log('componentName: ', componentName);
-                        switch (componentName) {
-                            case enums_1.ComponentNameEnum.DOC_UTILITY:
-                                iframeUrl = default_config_1.DEFAULT_CONFIG.baseUrls.docUtility;
-                                break;
-                            case enums_1.ComponentNameEnum.ON_BOARDING:
-                                iframeUrl = default_config_1.DEFAULT_CONFIG.baseUrls.onBoarding;
-                                break;
-                            default:
-                                throw new Error("Unknown component name");
-                        }
-                        return [4 /*yield*/, createIframeWithSource(iframeUrl)];
-                    case 3:
-                        iframe = _a.sent();
-                        return [2 /*return*/, iframe];
-                    case 4:
-                        error_2 = _a.sent();
-                        console.error("Error initializing WebSDK:", error_2);
-                        return [3 /*break*/, 5];
-                    case 5: return [2 /*return*/];
-                }
-            });
-        }); };
-        var logout = function () { return __awaiter(_this, void 0, void 0, function () {
-            var response, _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _b.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, axios_1.default.post("".concat(default_config_1.DEFAULT_CONFIG.baseUrls.backendServer, "/auth/access-token/revoke"), {
-                                accessToken: currentSessionId
-                            }, {
-                                headers: {
-                                    "Authorization": "b13d6405f3a3214d89d150137e39267d:7471c26b6104c923e6250cf7a827e120"
-                                }
-                            })];
-                    case 1:
-                        response = _b.sent();
-                        console.log('response: ', response);
-                        return [3 /*break*/, 3];
-                    case 2:
-                        _a = _b.sent();
-                        throw new Error("Something went wrong while logout");
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); };
-        return {
-            connect: connect,
-            destroyIframe: destroyIframe,
-            initialize: initialize,
-            logout: logout
-        };
-    }
-});
+            // Check if an iframe with the same ID already exists
+            var iframe = document.getElementById(default_config_1.DEFAULT_CONFIG.iframeId);
+            if (iframe) {
+                console.log("nc-js: Iframe already exists, reusing it.");
+                resolve(iframe);
+                return;
+            }
+            // If iframe doesn't exist, create it
+            iframe = document.createElement('iframe');
+            iframe.src = url;
+            iframe.id = default_config_1.DEFAULT_CONFIG.iframeId;
+            // Apply styles
+            Object.assign(iframe.style, cfg.defaultIframeStyles);
+            if (cfg.customStyles) {
+                Object.assign(iframe.style, cfg.customStyles);
+            }
+            // Event handlers
+            iframe.onload = function () {
+                console.log("Iframe loaded successfully");
+                currentIframe = iframe;
+                // Start session expiry check when iframe loads
+                startSessionExpiryCheck();
+                resolve(iframe);
+            };
+            iframe.onerror = function () {
+                reject(new Error("Iframe failed to load"));
+            };
+            container.appendChild(iframe);
+        });
+    };
+    var destroyIframe = function () {
+        if (currentIframe && currentIframe.parentNode) {
+            currentIframe.parentNode.removeChild(currentIframe);
+            currentIframe = null;
+        }
+        // Clear the session check interval when iframe is destroyed
+        if (sessionCheckInterval) {
+            clearInterval(sessionCheckInterval);
+            sessionCheckInterval = null;
+        }
+    };
+    // connect now accepts componentName to determine iframe source
+    var connect = function (componentName) { return __awaiter(_this, void 0, void 0, function () {
+        var accessToken, iframeUrl, iframe, error_2;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    console.log('componentName: ', componentName);
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 4, , 5]);
+                    return [4 /*yield*/, getAccessToken()];
+                case 2:
+                    accessToken = _a.sent();
+                    console.log("Initializing WebSDK with session:", accessToken);
+                    //Check If Opaque Token is Valid
+                    if (!cfg.sessionValidation(accessToken)) {
+                        throw new Error("Opaque Token is not valid");
+                    }
+                    iframeUrl = void 0;
+                    console.log('componentName: ', componentName);
+                    switch (componentName) {
+                        case enums_1.ComponentNameEnum.DOC_UTILITY:
+                            iframeUrl = default_config_1.DEFAULT_CONFIG.baseUrls.docUtility;
+                            break;
+                        case enums_1.ComponentNameEnum.ON_BOARDING:
+                            iframeUrl = default_config_1.DEFAULT_CONFIG.baseUrls.onBoarding;
+                            break;
+                        default:
+                            throw new Error("Unknown component name");
+                    }
+                    return [4 /*yield*/, createIframeWithSource(iframeUrl)];
+                case 3:
+                    iframe = _a.sent();
+                    return [2 /*return*/, iframe];
+                case 4:
+                    error_2 = _a.sent();
+                    console.error("Error initializing WebSDK:", error_2);
+                    return [3 /*break*/, 5];
+                case 5: return [2 /*return*/];
+            }
+        });
+    }); };
+    var logout = function () { return __awaiter(_this, void 0, void 0, function () {
+        var response, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    _b.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, axios_1.default.post("".concat(default_config_1.DEFAULT_CONFIG.baseUrls.backendServer, "/auth/access-token/revoke"), {
+                            accessToken: currentSessionId
+                        }, {
+                            headers: {
+                                "Authorization": "b13d6405f3a3214d89d150137e39267d:7471c26b6104c923e6250cf7a827e120"
+                            }
+                        })];
+                case 1:
+                    response = _b.sent();
+                    console.log('response: ', response);
+                    return [3 /*break*/, 3];
+                case 2:
+                    _a = _b.sent();
+                    throw new Error("Something went wrong while logout");
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); };
+    return {
+        connect: connect,
+        destroyIframe: destroyIframe,
+        initialize: initialize,
+        logout: logout
+    };
+}

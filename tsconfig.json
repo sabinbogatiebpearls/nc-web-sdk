@@ -3,8 +3,8 @@
     /* Visit https://aka.ms/tsconfig to read more about this file */
     // "target": "es2016",
     "target": "ES5",
-    // "module": "commonjs",
-    "module": "UMD",
+    "module": "commonjs",
+    // "module": "UMD",
     "declaration": true,
     "declarationMap": true,
     "outDir": "./dist",
