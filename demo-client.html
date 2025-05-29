@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SDK CDN Demo</title>
     <style>
-        #nc-container {
+        #websdk-container {
             width: 100%;
             height: 600px;
             border: 1px solid #ccc;
@@ -17,41 +17,50 @@
 <body>
 
     <!-- Container for the iframe -->
-    <div id="nc-container"></div>
-
-    <!-- Load your SDK via CDN -->
-    <script src="https://cdn.jsdelivr.net/gh/sabinbogatiebpearls/nc-web-sdk@dev-nawaraj/dist/cdn-index.js"></script>
+    <div id="websdk-container"></div>
 
     <!-- SDK usage -->
     <script>
-        // Wait for script to load
-        window.addEventListener('load', async () => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/gh/sabinbogatiebpearls/nc-web-sdk@dev-nawaraj/dist/cdn-index.js';
+        // script.src = './dist/cdn-index.js'; // local relative path
+        script.type = 'text/javascript';
+
+        script.onload = () => {
+            console.log('NCWebSDK script loaded successfully');
+            console.log('window.NCWebSDK:', window.NCWebSDK); // Debug the global
+            initializeSDK();
+        };
+        script.onerror = () => {
+            console.error('Failed to load NCWebSDK script');
+        };
+        document.head.appendChild(script);
+
+        async function initializeSDK() {
             if (!window.NCWebSDK) {
                 console.error('NCWebSDK not loaded');
                 return;
             }
-
-            const sdk = NCWebSDK({
-                getSessionId: async () => {
-                    // Replace with actual token logic in production
-                    return {
-                        accessToken: 'your-access-token',
-                        accessTokenExpiry: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 mins from now
-                    };
-                },
+            console.log('Initializing NCWebSDK...');
+            const sdk = window.NCWebSDK({
+                getSessionId: async () => ({
+                    accessToken: "c8NOmPz3Qe6eO5x9GJz5tXz9Qe6eO5x9GJz5tXz9Qe6e...",
+                    accessTokenExpiry: "2025-05-22T11:30:00Z",
+                    region: "NA"
+                }),
                 config: {
-                    containerId: 'nc-container', // optional if default is 'nc-container'
-                    sessionValidation: (token) => !!token && token.length > 10 // simple validation example
-                }
+                    containerId: 'websdk-container',
+                    sessionValidation: (token) => !!token && token.length > 10,
+                },
             });
 
             try {
-                const iframe = await sdk.connect("DOC_UTILITY");
+                const iframe = await sdk.connect("ON_BOARDING");
                 console.log('Iframe connected:', iframe);
             } catch (err) {
                 console.error('Error connecting SDK:', err);
             }
-        });
+        }
     </script>
 </body>
 

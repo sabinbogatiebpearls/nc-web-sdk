@@ -1,4 +1,4 @@
 import initialize from "@core/index";
 
 // Attach to window/globalThis
-(globalThis as any).NCWebSDK = initialize;
+(window as any).NCWebSDK = initialize;
