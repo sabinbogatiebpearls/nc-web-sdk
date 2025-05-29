@@ -19,8 +19,17 @@
     <!-- Container for the iframe -->
     <div id="websdk-container"></div>
 
+    <div style="display:flex; justify-content:center; padding: 1rem;">
+        <button id="logout-button"
+            style="padding: 1rem; color: white; background-color: red; border:none; outline: none; border-radius: 4px;">
+            Logout
+        </button>
+    </div>
+
     <!-- SDK usage -->
     <script>
+        let sdk;
+
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/gh/sabinbogatiebpearls/nc-web-sdk@dev-nawaraj/dist/cdn-index.js';
         // script.src = './dist/cdn-index.js'; // local relative path
@@ -42,7 +51,7 @@
                 return;
             }
             console.log('Initializing NCWebSDK...');
-            const sdk = window.NCWebSDK({
+            sdk = window.NCWebSDK({
                 getSessionId: async () => ({
                     accessToken: "c8NOmPz3Qe6eO5x9GJz5tXz9Qe6eO5x9GJz5tXz9Qe6e...",
                     accessTokenExpiry: "2025-05-22T11:30:00Z",
@@ -57,6 +66,21 @@
             try {
                 const iframe = await sdk.connect("ON_BOARDING");
                 console.log('Iframe connected:', iframe);
+
+                // Add event listener for logout button
+                const logoutButton = document.getElementById('logout-button');
+                logoutButton.addEventListener('click', async () => {
+                    try {
+                        await sdk.logout();
+                        console.log('Logout successful');
+                        // Optionally destroy iframe after logout
+                        sdk.destroyIframe();
+                        console.log('Iframe destroyed after logout');
+                    } catch (err) {
+                        console.error('Error during logout:', err);
+                    }
+                });
+
             } catch (err) {
                 console.error('Error connecting SDK:', err);
             }
