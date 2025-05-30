@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SDK CDN Demo</title>
+    <style>
+        #websdk-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Container for the iframe -->
+    <div id="websdk-container"></div>
+
+    <div style="display:flex; justify-content:center; padding: 1rem;">
+        <button id="logout-button"
+            style="padding: 1rem; color: white; background-color: red; border:none; outline: none; border-radius: 4px;">
+            Logout
+        </button>
+    </div>
+
+    <!-- SDK usage -->
+    <script>
+        let sdk;
+
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/gh/sabinbogatiebpearls/nc-web-sdk@dev-nawaraj/dist/cdn-index.js';
+        // script.src = './dist/cdn-index.js'; // local relative path
+        script.type = 'text/javascript';
+
+        script.onload = () => {
+            console.log('NCWebSDK script loaded successfully');
+            console.log('window.NCWebSDK:', window.NCWebSDK); // Debug the global
+            initializeSDK();
+        };
+        script.onerror = () => {
+            console.error('Failed to load NCWebSDK script');
+        };
+        document.head.appendChild(script);
+
+        async function initializeSDK() {
+            if (!window.NCWebSDK) {
+                console.error('NCWebSDK not loaded');
+                return;
+            }
+            console.log('Initializing NCWebSDK...');
+            sdk = window.NCWebSDK({
+                getSessionId: async () => ({
+                    accessToken: "c8NOmPz3Qe6eO5x9GJz5tXz9Qe6eO5x9GJz5tXz9Qe6e...",
+                    accessTokenExpiry: "2025-05-22T11:30:00Z",
+                    region: "NA"
+                }),
+                config: {
+                    containerId: 'websdk-container',
+                    sessionValidation: (token) => !!token && token.length > 10,
+                },
+            });
+
+            try {
+                const iframe = await sdk.connect("ON_BOARDING");
+                console.log('Iframe connected:', iframe);
+
+                // Add event listener for logout button
+                const logoutButton = document.getElementById('logout-button');
+                logoutButton.addEventListener('click', async () => {
+                    try {
+                        await sdk.logout();
+                        console.log('Logout successful');
+                        // Optionally destroy iframe after logout
+                        sdk.destroyIframe();
+                        console.log('Iframe destroyed after logout');
+                    } catch (err) {
+                        console.error('Error during logout:', err);
+                    }
+                });
+
+            } catch (err) {
+                console.error('Error connecting SDK:', err);
+            }
+        }
+    </script>
+</body>
+
+</html>
