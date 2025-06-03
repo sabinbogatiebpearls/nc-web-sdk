@@ -32,8 +32,8 @@
         let sdk;
 
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/gh/sabinbogatiebpearls/nc-web-sdk@main/dist/cdn-index.js';
-        // script.src = './dist/cdn-index.js'; // local relative path
+        // script.src = 'https://cdn.jsdelivr.net/gh/sabinbogatiebpearls/nc-web-sdk@main/dist/cdn-index.js';
+        script.src = './dist/cdn-index.js'; // local relative path
         script.type = 'text/javascript';
 
         script.onload = () => {
@@ -52,8 +52,9 @@
                 return;
             }
             console.log('Initializing NCWebSDK...');
-            sdk = window.NCWebSDK({
-                getSessionId: getSessionData,
+            sdk = await window.NCWebSDK({
+                publishableKey: "pk_TEST_KEY",
+                fetchClientSession: getSessionData,
                 config: {
                     containerId: 'websdk-container',
                     sessionValidation: (token) => !!token && token.length > 10,
@@ -61,7 +62,7 @@
             });
 
             try {
-                const iframe = await sdk.connect("ON_BOARDING");
+                const iframe = await sdk.loadComponent("ON_BOARDING");
                 console.log('Iframe connected:', iframe);
 
                 // Add event listener for logout button

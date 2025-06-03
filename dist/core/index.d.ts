@@ -1,7 +1,3 @@
-import { InitializeParams, WebSDK } from "../interfaces";
-export declare const ComponentNameEnum: {
-    DOC_UTILITY: string;
-    ON_BOARDING: string;
-};
-export default function initialize({ publishableKey, getSessionId, config }: InitializeParams): WebSDK;
+import { INuveiInitParams, INuveiInstance } from "../interfaces";
+export default function loadAndInitialize(params: INuveiInitParams): Promise<INuveiInstance>;
 //# sourceMappingURL=index.d.ts.map

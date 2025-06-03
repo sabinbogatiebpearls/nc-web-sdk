@@ -1,14 +1,14 @@
-export interface InitializeParams {
+export interface INuveiInitParams {
     publishableKey: string;
-    getSessionId: () => Promise<SessionResponse>;
-    config?: Partial<InitializeConfig>;
+    fetchClientSession: () => Promise<IClientSession>;
+    config?: Partial<INuveiInitConfig>;
 }
-export interface SessionResponse {
+export interface IClientSession {
     accessToken: string;
     accessTokenExpiry: string;
     region: string;
 }
-export interface InitializeConfig {
+export interface INuveiInitConfig {
     iframeId: string;
     containerId: string;
     baseUrls: Record<string, string>;
@@ -31,10 +31,11 @@ export interface HTMLIFrameElement extends HTMLElement {
     width: string;
     getSVGDocument(): Document | null;
 }
-export interface WebSDK {
-    connect: (componentName: string) => Promise<HTMLIFrameElement | void>;
+export interface INuveiInstance {
+    loadComponent: (componentName: string) => Promise<HTMLIFrameElement | void>;
     destroyIframe: () => void;
     logout: () => void;
-    initialize: (params: InitializeParams) => WebSDK;
+    loadAndInitialize: (params: INuveiInitParams) => Promise<INuveiInstance>;
+    sendMessageToMicroFrontend: (message: string) => void;
 }
 //# sourceMappingURL=index.d.ts.map

@@ -1,7 +1,7 @@
-import { InitializeConfig } from "@interfaces/index";
+import { INuveiInitConfig } from "@interfaces/index";
 
 // Configuration Constants
-export const DEFAULT_CONFIG: InitializeConfig = {
+export const DEFAULT_CONFIG: INuveiInitConfig = {
   iframeId: 'web-sdk-iframe',
   containerId: 'websdk-container',
   baseUrls: {

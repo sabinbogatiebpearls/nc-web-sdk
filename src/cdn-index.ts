@@ -1,4 +1,4 @@
-import initialize from "@core/index";
+import loadAndInitialize from "@core/index";
 
 // Attach to window/globalThis
-(window as any).NCWebSDK = initialize;
+(window as any).NCWebSDK = loadAndInitialize;
