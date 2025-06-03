@@ -1,5 +1,6 @@
 
 export interface InitializeParams {
+  publishableKey: string;
   getSessionId: () => Promise<SessionResponse>;
   config?: Partial<InitializeConfig>;
 }

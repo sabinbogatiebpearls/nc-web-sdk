@@ -8,7 +8,7 @@ export const ComponentNameEnum = {
   ON_BOARDING: 'ON_BOARDING'
 };
 
-export default function initialize({ getSessionId, config }: InitializeParams): WebSDK {
+export default function initialize({ publishableKey, getSessionId, config }: InitializeParams): WebSDK {
   // Merged configuration
   const cfg: InitializeConfig = { ...DEFAULT_CONFIG, ...config };
 
@@ -22,31 +22,6 @@ export default function initialize({ getSessionId, config }: InitializeParams): 
 
   let retryAttempts = 0;
   const MAX_RETRIES = 3;
-
-  //-------------------------- Session Expiry Check From SetInterval --------------------------
-  // const startSessionExpiryCheck = () => {
-  //   if (sessionCheckInterval) {
-  //     clearInterval(sessionCheckInterval);
-  //   }
-
-  //   sessionCheckInterval = setInterval(async () => {
-  //     try {
-  //       const expiryTime = new Date(tokenExpiryTime);
-  //       const now = new Date();
-
-  //       // If session is invalid or expired
-  //       if (now >= expiryTime) {
-  //         console.warn("[Session Check] Session expired. Destroying iframe.");
-  //         destroyIframe();
-  //         stopSessionExpiryCheck();
-  //       }
-  //     } catch (error) {
-  //       console.error("[Session Check] Failed to get session:", error);
-  //       destroyIframe();
-  //       stopSessionExpiryCheck();
-  //     }
-  //   }, cfg.sessionCheckInterval);
-  // };
 
   //-------------------------- Session Expiry Check From SetTimeOut --------------------------
   const startSessionExpiryCheck = async () => {
@@ -191,10 +166,10 @@ export default function initialize({ getSessionId, config }: InitializeParams): 
       console.log('componentName: ', componentName);
       switch (componentName) {
         case ComponentNameEnum.DOC_UTILITY:
-          iframeUrl = DEFAULT_CONFIG.baseUrls.docUtility;
+          iframeUrl = `${DEFAULT_CONFIG.baseUrls.docUtility}?publishableKey=${publishableKey}`;
           break;
         case ComponentNameEnum.ON_BOARDING:
-          iframeUrl = DEFAULT_CONFIG.baseUrls.onBoarding;
+          iframeUrl = `${DEFAULT_CONFIG.baseUrls.onBoarding}?publishableKey=${publishableKey}`;
           break;
         default:
           throw new Error("Unknown component name");
