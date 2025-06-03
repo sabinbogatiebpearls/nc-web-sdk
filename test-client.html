@@ -53,6 +53,7 @@
             }
             console.log('Initializing NCWebSDK...');
             sdk = await window.NCWebSDK({
+                publishableKey: "pk_TEST_KEY",
                 fetchClientSession: getSessionData,
                 config: {
                     containerId: 'websdk-container',
