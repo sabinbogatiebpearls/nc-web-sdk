@@ -28,6 +28,7 @@
 
     <!-- SDK usage -->
     <script>
+        const thirdPartyServerUrl = 'https://44dceed7-6d6e-45ff-898f-2e33986f54d9.mock.pstmn.io';
         let sdk;
 
         const script = document.createElement('script');
@@ -52,12 +53,7 @@
             }
             console.log('Initializing NCWebSDK...');
             sdk = window.NCWebSDK({
-                getSessionId: async () => ({
-                    publishableKey: "pk_TEST_KEY",
-                    accessToken: "c8NOmPz3Qe6eO5x9GJz5tXz9Qe6eO5x9GJz5tXz9Qe6e...",
-                    accessTokenExpiry: "2025-06-04T11:30:00Z",
-                    region: "NA"
-                }),
+                getSessionId: getSessionData,
                 config: {
                     containerId: 'websdk-container',
                     sessionValidation: (token) => !!token && token.length > 10,
@@ -84,6 +80,35 @@
 
             } catch (err) {
                 console.error('Error connecting SDK:', err);
+            }
+        }
+
+        async function getSessionData() {
+            try {
+                const response = await fetch(`${thirdPartyServerUrl}/auth/access-token/frontend`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Add authorization header if needed
+                        // 'Authorization': `Bearer ${someToken}`
+                    },
+                    body: JSON.stringify({
+                        modules: [
+                            { name: "ON_BOARDING" }
+                        ],
+                        // referenceId: "Partner123" //optional
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("data: ", data);
+                    return data;
+                } else {
+                    console.error('Error getting session data from third-party server: ', response.status);
+                }
+            } catch (err) {
+                console.error('Error getting session data from third-party server:', err);
             }
         }
     </script>

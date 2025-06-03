@@ -17,5 +17,5 @@ exports.DEFAULT_CONFIG = {
         display: 'block'
     },
     sessionValidation: function (token) { return token === "67421e9ef775687157024d3eb056193d:675fa9789d58913f86f4530b769b234a"; }, // Default validation
-    sessionCheckInterval: 5 * 60 * 1000, // 5 minutes
+    sessionCheckInterval: 10 * 60 * 1000, // 5 minutes
 };
