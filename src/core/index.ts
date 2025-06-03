@@ -22,6 +22,7 @@ export default function initialize({ publishableKey, getSessionId, config }: Ini
 
   let retryAttempts = 0;
   const MAX_RETRIES = 3;
+  let iframeUrl: string;
 
   //-------------------------- Session Expiry Check From SetTimeOut --------------------------
   const startSessionExpiryCheck = async () => {
@@ -162,7 +163,6 @@ export default function initialize({ publishableKey, getSessionId, config }: Ini
       }
 
       // Determine the URL based on componentName
-      let iframeUrl;
       console.log('componentName: ', componentName);
       switch (componentName) {
         case ComponentNameEnum.DOC_UTILITY:
@@ -199,10 +199,21 @@ export default function initialize({ publishableKey, getSessionId, config }: Ini
     }
   }
 
+  const sendMessageToMicroFrontend = (message: any) => {
+    if (!currentIframe || !currentIframe.contentWindow) {
+      console.warn("Iframe is not initialized or not available");
+      return;
+    }
+
+    console.log("Sending message to microfrontend:", message);
+    currentIframe.contentWindow.postMessage(message, iframeUrl);
+  };
+
   return {
     connect,
     destroyIframe,
     initialize,
-    logout
+    logout,
+    sendMessageToMicroFrontend
   };
 }

@@ -43,4 +43,5 @@ export interface WebSDK {
   destroyIframe: () => void;
   logout: () => void;
   initialize: (params: InitializeParams) => WebSDK;
+  sendMessageToMicroFrontend: (message: string) => void;
 }
