@@ -1,16 +1,16 @@
+import { ComponentNameEnum } from "@common/enums";
 import { DEFAULT_CONFIG } from "../config/default-config";
-import { HTMLIFrameElement, InitializeConfig, InitializeParams, WebSDK } from "../interfaces";
+import { HTMLIFrameElement, INuveiInitConfig, INuveiInitParams, INuveiInstance } from "../interfaces";
 import axios from "axios";
 
-// Define the Enum for component names
-export const ComponentNameEnum = {
-  DOC_UTILITY: 'DOC_UTILITY',
-  ON_BOARDING: 'ON_BOARDING'
-};
 
-export default function initialize({ publishableKey, getSessionId, config }: InitializeParams): WebSDK {
+export default async function loadAndInitialize(params: INuveiInitParams): Promise<INuveiInstance> {
+  // destructure params
+  const { publishableKey, fetchClientSession, config } = params;
+
   // Merged configuration
-  const cfg: InitializeConfig = { ...DEFAULT_CONFIG, ...config };
+  const sdkConfig: INuveiInitConfig = { ...DEFAULT_CONFIG, ...config };
+
 
   // State variables
   let currentSessionId: string | null = null;
@@ -24,7 +24,17 @@ export default function initialize({ publishableKey, getSessionId, config }: Ini
   const MAX_RETRIES = 3;
   let iframeUrl: string;
 
-  //-------------------------- Session Expiry Check From SetTimeOut --------------------------
+
+
+  /**
+   * Schedules a session expiry check in the future based on the provided
+   * {@link tokenExpiryTime}. If the token has already expired, the check
+   * is retried up to {@link MAX_RETRIES} times. If all retries fail, the
+   * session check is stopped and the iframe is destroyed.
+   *
+   * @throws {Error} If the session check fails with an error, the iframe is
+   * destroyed as a fallback.
+   */
   const startSessionExpiryCheck = async () => {
     try {
       const expiryTime = new Date(tokenExpiryTime);
@@ -61,7 +71,7 @@ export default function initialize({ publishableKey, getSessionId, config }: Ini
           return;
         }
 
-        await getSessionId(); // renew or destroy iframe if fails
+        await fetchClientSession(); // renew or destroy iframe if fails
         startSessionExpiryCheck(); // reschedule with the new expiry
       }, delay);
     } catch (err) {
@@ -70,6 +80,12 @@ export default function initialize({ publishableKey, getSessionId, config }: Ini
     }
   };
 
+
+  /**
+   * Stops the session expiry check scheduled by {@link startSessionExpiryCheck}.
+   * This is useful when the iframe is destroyed or the session is manually
+   * invalidated.
+   */
   const stopSessionExpiryCheck = () => {
     if (sessionCheckInterval) {
       clearInterval(sessionCheckInterval);
@@ -77,23 +93,46 @@ export default function initialize({ publishableKey, getSessionId, config }: Ini
     }
   };
 
-  const getAccessToken = async () => {
+
+  /**
+   * Retrieves and validates the current client session.
+   *
+   * This asynchronous function fetches a new client session using
+   * `fetchClientSession`, validates the session's access token using
+   * `sessionValidation`, and updates the current session ID and
+   * token expiry time. If the session token is invalid, an error is thrown.
+   *
+   * @returns {Promise<string>} The current session ID if validation is successful.
+   * @throws {Error} If session validation fails or any error occurs during
+   * the fetching or validation process.
+   */
+  const getClientSession = async (): Promise<string> => {
     try {
-      const session = await getSessionId();
-      console.log('session: ', session);
-      if (!cfg.sessionValidation(session.accessToken)) {
+      const session = await fetchClientSession();
+
+      if (!sdkConfig.sessionValidation(session.accessToken)) {
         throw new Error("Invalid session token");
       }
+
       currentSessionId = session.accessToken;
-      console.log('currentSessionId: ', currentSessionId);
       tokenExpiryTime = session.accessTokenExpiry;
       return currentSessionId;
+
     } catch (error) {
       console.error("Session validation failed:", error);
       throw error;
     }
   };
 
+
+  /**
+   * Creates an iframe with the given URL and appends it to the container with the given ID.
+   * If an iframe with the same ID already exists, it is reused.
+   *
+   * @param {string} url The URL to load in the iframe
+   * @returns {Promise<HTMLIFrameElement>} A promise that resolves to the created iframe element
+   * @throws {Error} If the container element is not found or the iframe fails to load
+   */
   const createIframeWithSource = (url: string): Promise<HTMLIFrameElement> => {
     return new Promise((resolve, reject) => {
       const container = document.getElementById(DEFAULT_CONFIG.containerId);
@@ -115,9 +154,9 @@ export default function initialize({ publishableKey, getSessionId, config }: Ini
       iframe.id = DEFAULT_CONFIG.iframeId;
 
       // Apply styles
-      Object.assign(iframe.style, cfg.defaultIframeStyles);
-      if (cfg.customStyles) {
-        Object.assign(iframe.style, cfg.customStyles);
+      Object.assign(iframe.style, sdkConfig.defaultIframeStyles);
+      if (sdkConfig.customStyles) {
+        Object.assign(iframe.style, sdkConfig.customStyles);
       }
 
       // Event handlers
@@ -138,11 +177,17 @@ export default function initialize({ publishableKey, getSessionId, config }: Ini
     });
   };
 
+
+  /**
+   * Destroys the current iframe if it exists, removing it from the DOM.
+   * Also clears the session check interval associated with the iframe.
+   */
   const destroyIframe = () => {
     if (currentIframe && currentIframe.parentNode) {
       currentIframe.parentNode.removeChild(currentIframe);
       currentIframe = null;
     }
+
     // Clear the session check interval when iframe is destroyed
     if (sessionCheckInterval) {
       clearInterval(sessionCheckInterval);
@@ -150,15 +195,30 @@ export default function initialize({ publishableKey, getSessionId, config }: Ini
     }
   };
 
-  // connect now accepts componentName to determine iframe source
-  const connect = async (componentName: string): Promise<HTMLIFrameElement | void> => {
+
+  /**
+   * Establishes a connection to a specified component by creating and loading an iframe.
+   *
+   * This asynchronous function initializes the WebSDK with a valid session, validates
+   * the session token, determines the appropriate iframe URL based on the given
+   * component name, and creates the iframe with the specified source URL.
+   *
+   * @param {string} componentName - The name of the component to connect to.
+   *        Valid values are defined in the ComponentNameEnum.
+   *
+   * @returns {Promise<HTMLIFrameElement | void>} A promise that resolves to the created
+   *          iframe element, or void if an error occurs.
+   *
+   * @throws {Error} Throws an error if the session token is invalid or if the
+   *         specified component name is unknown.
+   */
+  const loadComponent = async (componentName: string): Promise<HTMLIFrameElement | void> => {
     console.log('componentName: ', componentName);
     try {
-      const accessToken = await getAccessToken();
-      console.log("Initializing WebSDK with session:", accessToken);
+      const accessToken = await getClientSession();
 
       //Check If Opaque Token is Valid
-      if (!cfg.sessionValidation(accessToken)) {
+      if (!sdkConfig.sessionValidation(accessToken)) {
         throw new Error("Opaque Token is not valid");
       }
 
@@ -168,37 +228,56 @@ export default function initialize({ publishableKey, getSessionId, config }: Ini
         case ComponentNameEnum.DOC_UTILITY:
           iframeUrl = `${DEFAULT_CONFIG.baseUrls.docUtility}?publishableKey=${publishableKey}`;
           break;
+
         case ComponentNameEnum.ON_BOARDING:
           iframeUrl = `${DEFAULT_CONFIG.baseUrls.onBoarding}?publishableKey=${publishableKey}`;
           break;
+
         default:
           throw new Error("Unknown component name");
       }
 
-
       // Create and load the iframe in the container
       const iframe = await createIframeWithSource(iframeUrl);
       return iframe;
+
     } catch (error) {
       console.error("Error initializing WebSDK:", error);
     }
   };
 
+
+  /**
+   * Logout of the WebSDK.
+   *
+   * Logs out the current session, revoking the access token. If the logout is
+   * successful, the SDK will destroy the iframe.
+   *
+   * @throws {Error} Throws an error if something goes wrong during logout.
+   */
   const logout = async () => {
     try {
-      const response = await axios.post(`${DEFAULT_CONFIG.baseUrls.backendServer}/auth/access-token/revoke`, {
-        accessToken: currentSessionId
-      }, {
-        headers: {
-          "Authorization": "b13d6405f3a3214d89d150137e39267d:7471c26b6104c923e6250cf7a827e120"
-        }
-      });
-      console.log('response: ', response);
+      const response = await axios.post(`${DEFAULT_CONFIG.baseUrls.backendServer}/auth/access-token/revoke`,
+        { accessToken: currentSessionId },
+        { headers: { "Authorization": "b13d6405f3a3214d89d150137e39267d:7471c26b6104c923e6250cf7a827e120" } }
+      );
+
+      console.log('\nSDK logout response: ', response);
     } catch {
       throw new Error("Something went wrong while logout");
     }
   }
 
+
+  /**
+   * Sends a message to the microfrontend inside the iframe.
+   *
+   * The message is sent using the postMessage API. The iframe must be
+   * initialized and available for this method to work. If the iframe is not
+   * initialized, a warning is logged and the method does nothing.
+   *
+   * @param {any} message The message to be sent to the microfrontend.
+   */
   const sendMessageToMicroFrontend = (message: any) => {
     if (!currentIframe || !currentIframe.contentWindow) {
       console.warn("Iframe is not initialized or not available");
@@ -209,10 +288,11 @@ export default function initialize({ publishableKey, getSessionId, config }: Ini
     currentIframe.contentWindow.postMessage(message, iframeUrl);
   };
 
+
   return {
-    connect,
+    loadComponent,
     destroyIframe,
-    initialize,
+    loadAndInitialize,
     logout,
     sendMessageToMicroFrontend
   };

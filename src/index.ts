@@ -1,6 +1,8 @@
-import initialize from "@core/index";
+import loadAndInitialize from "@core/index";
 import { ComponentNameEnum } from "@common/enums/index";
 
 
-export default initialize;
-export { ComponentNameEnum };
+export {
+    loadAndInitialize,
+    ComponentNameEnum
+};
