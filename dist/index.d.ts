@@ -1,4 +1,5 @@
 import loadAndInitialize from "./core/index";
 import { ComponentNameEnum } from "./common/enums/index";
-export { loadAndInitialize, ComponentNameEnum };
+import * as types from "./interfaces/index";
+export { loadAndInitialize, ComponentNameEnum, types };
 //# sourceMappingURL=index.d.ts.map
