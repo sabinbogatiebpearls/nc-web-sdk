@@ -2,6 +2,7 @@ import { ComponentNameEnum } from "@common/enums";
 import { DEFAULT_CONFIG } from "../config/default-config";
 import { HTMLIFrameElement, INuveiInitConfig, INuveiInitParams, INuveiInstance } from "../interfaces";
 import axios from "axios";
+import { ISdkPostMessagePayload } from "@interfaces/post-message.interfaces";
 
 
 export default async function loadAndInitialize(params: INuveiInitParams): Promise<INuveiInstance> {
@@ -38,22 +39,22 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
   const startSessionExpiryCheck = async () => {
     try {
       const expiryTime = new Date(tokenExpiryTime);
-      console.log('expiryTime: ', expiryTime);
+      // console.log('expiryTime: ', expiryTime);
       const now = new Date();
 
       const delay = expiryTime.getTime() - now.getTime();
-      console.log("Scheduling expiry check in", delay / (1000 * 60), "minutes");
+      // console.log("Scheduling expiry check in", delay / (1000 * 60), "minutes");
 
       if (delay <= 0) {
         if (retryAttempts >= MAX_RETRIES) {
-          console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
+          // console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
           stopSessionExpiryCheck();
           destroyIframe();
           return;
         }
 
         retryAttempts++;
-        console.warn(`Token already expired. Attempt ${retryAttempts} of ${MAX_RETRIES}. Getting new session...`);
+        // console.warn(`Token already expired. Attempt ${retryAttempts} of ${MAX_RETRIES}. Getting new session...`);
         return startSessionExpiryCheck(); // Retry
       }
 
@@ -62,7 +63,7 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
       }
 
       expiryTimeout = setTimeout(async () => {
-        console.warn("Token expired. Getting new session...");
+        // console.warn("Token expired. Getting new session...");
 
         if (retryAttempts >= MAX_RETRIES) {
           console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
@@ -213,7 +214,19 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
    *         specified component name is unknown.
    */
   const loadComponent = async (componentName: string): Promise<HTMLIFrameElement | void> => {
-    console.log('componentName: ', componentName);
+    console.log('componentName(Web SDK): ', componentName);
+
+    let postMessageData: ISdkPostMessagePayload = {
+      source: "NUVEI_FRONTEND_SDK",
+      type: "SDK_COMMUNICATION",
+      data: {
+        frontendAccessToken: "",
+        publishableKey,
+        componentName: "ON_BOARDING",
+        other: null
+      }
+    };
+
     try {
       const accessToken = await getClientSession();
 
@@ -222,16 +235,19 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
         throw new Error("Opaque Token is not valid");
       }
 
-      // Determine the URL based on componentName
-      console.log('componentName: ', componentName);
+      // if session token is valid
+      postMessageData.data.frontendAccessToken = accessToken;
+
+      // Determine the URL based on componentName      
       switch (componentName) {
         case ComponentNameEnum.DOC_UTILITY:
           iframeUrl = `${DEFAULT_CONFIG.baseUrls.docUtility}?publishableKey=${publishableKey}`;
           break;
 
-        case ComponentNameEnum.ON_BOARDING:
+        case ComponentNameEnum.ON_BOARDING: {
           iframeUrl = `${DEFAULT_CONFIG.baseUrls.onBoarding}?publishableKey=${publishableKey}`;
           break;
+        }
 
         default:
           throw new Error("Unknown component name");
@@ -239,6 +255,7 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
 
       // Create and load the iframe in the container
       const iframe = await createIframeWithSource(iframeUrl);
+      sendMessageToMicroFrontend(postMessageData);
       return iframe;
 
     } catch (error) {
@@ -269,23 +286,14 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
   }
 
 
-  /**
-   * Sends a message to the microfrontend inside the iframe.
-   *
-   * The message is sent using the postMessage API. The iframe must be
-   * initialized and available for this method to work. If the iframe is not
-   * initialized, a warning is logged and the method does nothing.
-   *
-   * @param {any} message The message to be sent to the microfrontend.
-   */
-  const sendMessageToMicroFrontend = (message: any) => {
+  const sendMessageToMicroFrontend = (payload: ISdkPostMessagePayload) => {
     if (!currentIframe || !currentIframe.contentWindow) {
       console.warn("Iframe is not initialized or not available");
       return;
     }
 
-    console.log("Sending message to microfrontend:", message);
-    currentIframe.contentWindow.postMessage(message, iframeUrl);
+    console.log("Sending message to microfrontend:", payload);
+    currentIframe.contentWindow.postMessage(payload, iframeUrl);
   };
 
 

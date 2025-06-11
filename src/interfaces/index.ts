@@ -1,3 +1,4 @@
+import { ISdkPostMessagePayload } from "./post-message.interfaces";
 
 export interface INuveiInitParams {
   publishableKey: string;
@@ -48,5 +49,5 @@ export interface INuveiInstance {
   destroyIframe: () => void;
   logout: () => void;
   loadAndInitialize: (params: INuveiInitParams) => Promise<INuveiInstance>;
-  sendMessageToMicroFrontend: (message: sendMessagePayload) => void;
+  sendMessageToMicroFrontend: (message: ISdkPostMessagePayload) => void;
 }

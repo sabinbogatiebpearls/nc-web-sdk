@@ -1,10 +1,12 @@
 import loadAndInitialize from "@core/index";
 import { ComponentNameEnum } from "@common/enums/index";
-import  * as types from "@interfaces/index";
+import { INuveiInstance, INuveiInitParams, INuveiInitConfig } from "@interfaces/index";
 
 
 export {
   loadAndInitialize,
   ComponentNameEnum,
-  types
+  INuveiInstance,
+  INuveiInitConfig,
+  INuveiInitParams
 };
