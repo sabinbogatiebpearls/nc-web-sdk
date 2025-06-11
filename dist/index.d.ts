@@ -1,4 +1,5 @@
 import loadAndInitialize from "./core/index";
 import { ComponentNameEnum } from "./common/enums/index";
-export { loadAndInitialize, ComponentNameEnum };
+import { INuveiInstance, INuveiInitParams, INuveiInitConfig } from "./interfaces/index";
+export { loadAndInitialize, ComponentNameEnum, INuveiInstance, INuveiInitConfig, INuveiInitParams };
 //# sourceMappingURL=index.d.ts.map

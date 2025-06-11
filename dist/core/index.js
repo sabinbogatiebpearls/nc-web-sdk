@@ -74,19 +74,18 @@ function loadAndInitialize(params) {
                 return __generator(this, function (_a) {
                     try {
                         expiryTime = new Date(tokenExpiryTime);
-                        console.log('expiryTime: ', expiryTime);
                         now = new Date();
                         delay = expiryTime.getTime() - now.getTime();
-                        console.log("Scheduling expiry check in", delay / (1000 * 60), "minutes");
+                        // console.log("Scheduling expiry check in", delay / (1000 * 60), "minutes");
                         if (delay <= 0) {
                             if (retryAttempts >= MAX_RETRIES) {
-                                console.warn("Max retry attempts (".concat(MAX_RETRIES, ") reached. Stopping session check."));
+                                // console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
                                 stopSessionExpiryCheck();
                                 destroyIframe();
                                 return [2 /*return*/];
                             }
                             retryAttempts++;
-                            console.warn("Token already expired. Attempt ".concat(retryAttempts, " of ").concat(MAX_RETRIES, ". Getting new session..."));
+                            // console.warn(`Token already expired. Attempt ${retryAttempts} of ${MAX_RETRIES}. Getting new session...`);
                             return [2 /*return*/, startSessionExpiryCheck()]; // Retry
                         }
                         if (expiryTimeout) {
@@ -96,7 +95,7 @@ function loadAndInitialize(params) {
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
-                                        console.warn("Token expired. Getting new session...");
+                                        // console.warn("Token expired. Getting new session...");
                                         if (retryAttempts >= MAX_RETRIES) {
                                             console.warn("Max retry attempts (".concat(MAX_RETRIES, ") reached. Stopping session check."));
                                             stopSessionExpiryCheck();
@@ -196,11 +195,21 @@ function loadAndInitialize(params) {
                 }
             };
             loadComponent = function (componentName) { return __awaiter(_this, void 0, void 0, function () {
-                var accessToken, iframe, error_2;
+                var postMessageData, accessToken, iframe, error_2;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            console.log('componentName: ', componentName);
+                            console.log('componentName(Web SDK): ', componentName);
+                            postMessageData = {
+                                source: "NUVEI_FRONTEND_SDK",
+                                type: "SDK_COMMUNICATION",
+                                data: {
+                                    frontendAccessToken: "",
+                                    publishableKey: publishableKey,
+                                    componentName: "ON_BOARDING",
+                                    other: null
+                                }
+                            };
                             _a.label = 1;
                         case 1:
                             _a.trys.push([1, 4, , 5]);
@@ -211,21 +220,24 @@ function loadAndInitialize(params) {
                             if (!sdkConfig.sessionValidation(accessToken)) {
                                 throw new Error("Opaque Token is not valid");
                             }
-                            // Determine the URL based on componentName
-                            console.log('componentName: ', componentName);
+                            // if session token is valid
+                            postMessageData.data.frontendAccessToken = accessToken;
+                            // Determine the URL based on componentName      
                             switch (componentName) {
                                 case enums_1.ComponentNameEnum.DOC_UTILITY:
                                     iframeUrl = "".concat(default_config_1.DEFAULT_CONFIG.baseUrls.docUtility, "?publishableKey=").concat(publishableKey);
                                     break;
-                                case enums_1.ComponentNameEnum.ON_BOARDING:
+                                case enums_1.ComponentNameEnum.ON_BOARDING: {
                                     iframeUrl = "".concat(default_config_1.DEFAULT_CONFIG.baseUrls.onBoarding, "?publishableKey=").concat(publishableKey);
                                     break;
+                                }
                                 default:
                                     throw new Error("Unknown component name");
                             }
                             return [4 /*yield*/, createIframeWithSource(iframeUrl)];
                         case 3:
                             iframe = _a.sent();
+                            sendMessageToMicroFrontend(postMessageData);
                             return [2 /*return*/, iframe];
                         case 4:
                             error_2 = _a.sent();
@@ -253,13 +265,13 @@ function loadAndInitialize(params) {
                     }
                 });
             }); };
-            sendMessageToMicroFrontend = function (message) {
+            sendMessageToMicroFrontend = function (payload) {
                 if (!currentIframe || !currentIframe.contentWindow) {
                     console.warn("Iframe is not initialized or not available");
                     return;
                 }
-                console.log("Sending message to microfrontend:", message);
-                currentIframe.contentWindow.postMessage(message, iframeUrl);
+                console.log("Sending message to microfrontend:", payload);
+                currentIframe.contentWindow.postMessage(payload, iframeUrl);
             };
             return [2 /*return*/, {
                     loadComponent: loadComponent,
