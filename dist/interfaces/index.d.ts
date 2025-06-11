@@ -32,6 +32,10 @@ export interface HTMLIFrameElement extends HTMLElement {
     width: string;
     getSVGDocument(): Document | null;
 }
+export interface sendMessagePayload {
+    type: string;
+    message: string;
+}
 export interface INuveiInstance {
     loadComponent: (componentName: string) => Promise<HTMLIFrameElement | void>;
     destroyIframe: () => void;

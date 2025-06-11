@@ -4,9 +4,9 @@ import { INuveiInstance, INuveiInitParams, INuveiInitConfig } from "@interfaces/
 
 
 export {
-    loadAndInitialize,
-    ComponentNameEnum,
-    INuveiInstance,
-    INuveiInitConfig,
-    INuveiInitParams
+  loadAndInitialize,
+  ComponentNameEnum,
+  INuveiInstance,
+  INuveiInitConfig,
+  INuveiInitParams
 };
