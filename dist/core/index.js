@@ -76,8 +76,9 @@ function loadAndInitialize(params) {
                         expiryTime = new Date(tokenExpiryTime);
                         now = new Date();
                         delay = expiryTime.getTime() - now.getTime();
-                        // console.log("Scheduling expiry check in", delay / (1000 * 60), "minutes");
+                        console.log("Scheduling expiry check in", delay / (1000 * 60), "minutes");
                         if (delay <= 0) {
+                            console.log('retryAttempts: ', retryAttempts);
                             if (retryAttempts >= MAX_RETRIES) {
                                 // console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
                                 stopSessionExpiryCheck();
@@ -96,6 +97,7 @@ function loadAndInitialize(params) {
                                 switch (_a.label) {
                                     case 0:
                                         // console.warn("Token expired. Getting new session...");
+                                        console.log('retryAttempts >= MAX_RETRIES: ', retryAttempts >= MAX_RETRIES);
                                         if (retryAttempts >= MAX_RETRIES) {
                                             console.warn("Max retry attempts (".concat(MAX_RETRIES, ") reached. Stopping session check."));
                                             stopSessionExpiryCheck();
@@ -133,7 +135,7 @@ function loadAndInitialize(params) {
                             return [4 /*yield*/, fetchClientSession()];
                         case 1:
                             session = _a.sent();
-                            if (!sdkConfig.sessionValidation(session.accessToken)) {
+                            if (!(sdkConfig === null || sdkConfig === void 0 ? void 0 : sdkConfig.sessionValidation(session.accessToken))) {
                                 throw new Error("Invalid session token");
                             }
                             currentSessionId = session.accessToken;
@@ -172,7 +174,7 @@ function loadAndInitialize(params) {
                     // Event handlers
                     iframe.onload = function () {
                         console.log("Iframe loaded successfully");
-                        currentIframe = iframe;
+                        // currentIframe = iframe;
                         // Start session expiry check when iframe loads
                         startSessionExpiryCheck();
                         resolve(iframe);
@@ -222,7 +224,7 @@ function loadAndInitialize(params) {
                             }
                             // if session token is valid
                             postMessageData.data.frontendAccessToken = accessToken;
-                            // Determine the URL based on componentName      
+                            // Determine the URL based on componentName
                             switch (componentName) {
                                 case enums_1.ComponentNameEnum.DOC_UTILITY:
                                     iframeUrl = "".concat(default_config_1.DEFAULT_CONFIG.baseUrls.docUtility, "?publishableKey=").concat(publishableKey);
@@ -237,6 +239,7 @@ function loadAndInitialize(params) {
                             return [4 /*yield*/, createIframeWithSource(iframeUrl)];
                         case 3:
                             iframe = _a.sent();
+                            currentIframe = iframe;
                             sendMessageToMicroFrontend(postMessageData);
                             return [2 /*return*/, iframe];
                         case 4:
@@ -266,6 +269,7 @@ function loadAndInitialize(params) {
                 });
             }); };
             sendMessageToMicroFrontend = function (payload) {
+                console.log('currentIframe: ', currentIframe);
                 if (!currentIframe || !currentIframe.contentWindow) {
                     console.warn("Iframe is not initialized or not available");
                     return;

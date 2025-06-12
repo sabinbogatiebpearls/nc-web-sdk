@@ -111,7 +111,7 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
     try {
       const session = await fetchClientSession();
 
-      if (!sdkConfig.sessionValidation(session.accessToken)) {
+      if (!sdkConfig?.sessionValidation(session.accessToken)) {
         throw new Error("Invalid session token");
       }
 
@@ -163,7 +163,7 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
       // Event handlers
       iframe.onload = () => {
         console.log("Iframe loaded successfully");
-        currentIframe = iframe;
+        // currentIframe = iframe;
 
         // Start session expiry check when iframe loads
         startSessionExpiryCheck();
@@ -238,7 +238,7 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
       // if session token is valid
       postMessageData.data.frontendAccessToken = accessToken;
 
-      // Determine the URL based on componentName      
+      // Determine the URL based on componentName
       switch (componentName) {
         case ComponentNameEnum.DOC_UTILITY:
           iframeUrl = `${DEFAULT_CONFIG.baseUrls.docUtility}?publishableKey=${publishableKey}`;
@@ -255,6 +255,7 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
 
       // Create and load the iframe in the container
       const iframe = await createIframeWithSource(iframeUrl);
+      currentIframe = iframe;
       sendMessageToMicroFrontend(postMessageData);
       return iframe;
 
