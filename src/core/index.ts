@@ -26,71 +26,70 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
   let iframeUrl: string;
 
 
-
   /**
-   * Schedules a session expiry check in the future based on the provided
-   * {@link tokenExpiryTime}. If the token has already expired, the check
-   * is retried up to {@link MAX_RETRIES} times. If all retries fail, the
-   * session check is stopped and the iframe is destroyed.
+   * Establishes a connection to a specified component by creating and loading an iframe.
    *
-   * @throws {Error} If the session check fails with an error, the iframe is
-   * destroyed as a fallback.
-   */
-  const startSessionExpiryCheck = async () => {
+   * This asynchronous function initializes the WebSDK with a valid session, validates
+   * the session token, determines the appropriate iframe URL based on the given
+   * component name, and creates the iframe with the specified source URL.
+   *
+   * @param {string} componentName - The name of the component to connect to.
+   *        Valid values are defined in the ComponentNameEnum.
+   *
+   * @returns {Promise<HTMLIFrameElement | void>} A promise that resolves to the created
+   *          iframe element, or void if an error occurs.
+   *
+   * @throws {Error} Throws an error if the session token is invalid or if the
+   *         specified component name is unknown.
+ */
+  const loadComponent = async (componentName: string): Promise<HTMLIFrameElement | void> => {
+    console.log('componentName(Web SDK): ', componentName);
+
+    let postMessageData: ISdkPostMessagePayload = {
+      source: "NUVEI_FRONTEND_SDK",
+      type: "SDK_COMMUNICATION",
+      data: {
+        frontendAccessToken: "",
+        publishableKey,
+        componentName: "ON_BOARDING",
+        other: null
+      }
+    };
+
     try {
-      const expiryTime = new Date(tokenExpiryTime);
-      // console.log('expiryTime: ', expiryTime);
-      const now = new Date();
+      const accessToken = await getClientSession();
 
-      const delay = expiryTime.getTime() - now.getTime();
-      // console.log("Scheduling expiry check in", delay / (1000 * 60), "minutes");
-
-      if (delay <= 0) {
-        if (retryAttempts >= MAX_RETRIES) {
-          // console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
-          stopSessionExpiryCheck();
-          destroyIframe();
-          return;
-        }
-
-        retryAttempts++;
-        // console.warn(`Token already expired. Attempt ${retryAttempts} of ${MAX_RETRIES}. Getting new session...`);
-        return startSessionExpiryCheck(); // Retry
+      //Check If Opaque Token is Valid
+      if (!sdkConfig.sessionValidation(accessToken)) {
+        throw new Error("Opaque Token is not valid");
       }
 
-      if (expiryTimeout) {
-        clearTimeout(expiryTimeout);
-      }
+      // if session token is valid
+      postMessageData.data.frontendAccessToken = accessToken;
 
-      expiryTimeout = setTimeout(async () => {
-        // console.warn("Token expired. Getting new session...");
+      // Determine the URL based on componentName
+      switch (componentName) {
+        case ComponentNameEnum.DOC_UTILITY:
+          iframeUrl = `${DEFAULT_CONFIG.baseUrls.docUtility}?publishableKey=${publishableKey}`;
+          break;
 
-        if (retryAttempts >= MAX_RETRIES) {
-          console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
-          stopSessionExpiryCheck();
-          destroyIframe();
-          return;
+        case ComponentNameEnum.ON_BOARDING: {
+          iframeUrl = `${DEFAULT_CONFIG.baseUrls.onBoarding}?publishableKey=${publishableKey}`;
+          break;
         }
 
-        await fetchClientSession(); // renew or destroy iframe if fails
-        startSessionExpiryCheck(); // reschedule with the new expiry
-      }, delay);
-    } catch (err) {
-      console.error("Failed to schedule session check:", err);
-      destroyIframe(); // fallback: kill iframe on error
-    }
-  };
+        default:
+          throw new Error("Unknown component name");
+      }
 
+      // Create and load the iframe in the container
+      const iframe = await createIframeWithSource(iframeUrl);
+      currentIframe = iframe;
+      sendMessageToMicroFrontend(postMessageData);
+      return iframe;
 
-  /**
-   * Stops the session expiry check scheduled by {@link startSessionExpiryCheck}.
-   * This is useful when the iframe is destroyed or the session is manually
-   * invalidated.
-   */
-  const stopSessionExpiryCheck = () => {
-    if (sessionCheckInterval) {
-      clearInterval(sessionCheckInterval);
-      sessionCheckInterval = null;
+    } catch (error) {
+      console.error("Error initializing WebSDK:", error);
     }
   };
 
@@ -180,9 +179,64 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
 
 
   /**
+   * Schedules a session expiry check in the future based on the provided
+   * {@link tokenExpiryTime}. If the token has already expired, the check
+   * is retried up to {@link MAX_RETRIES} times. If all retries fail, the
+   * session check is stopped and the iframe is destroyed.
+   *
+   * @throws {Error} If the session check fails with an error, the iframe is
+   * destroyed as a fallback.
+  */
+  const startSessionExpiryCheck = async () => {
+    try {
+      const expiryTime = new Date(tokenExpiryTime);
+      // console.log('expiryTime: ', expiryTime);
+      const now = new Date();
+
+      const delay = expiryTime.getTime() - now.getTime();
+      // console.log("Scheduling expiry check in", delay / (1000 * 60), "minutes");
+
+      if (delay <= 0) {
+        if (retryAttempts >= MAX_RETRIES) {
+          // console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
+          stopSessionExpiryCheck();
+          destroyIframe();
+          return;
+        }
+
+        retryAttempts++;
+        // console.warn(`Token already expired. Attempt ${retryAttempts} of ${MAX_RETRIES}. Getting new session...`);
+        return startSessionExpiryCheck(); // Retry
+      }
+
+      if (expiryTimeout) {
+        clearTimeout(expiryTimeout);
+      }
+
+      expiryTimeout = setTimeout(async () => {
+        // console.warn("Token expired. Getting new session...");
+
+        if (retryAttempts >= MAX_RETRIES) {
+          console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
+          stopSessionExpiryCheck();
+          destroyIframe();
+          return;
+        }
+
+        await fetchClientSession(); // renew or destroy iframe if fails
+        startSessionExpiryCheck(); // reschedule with the new expiry
+      }, delay);
+    } catch (err) {
+      console.error("Failed to schedule session check:", err);
+      destroyIframe(); // fallback: kill iframe on error
+    }
+  };
+
+
+  /**
    * Destroys the current iframe if it exists, removing it from the DOM.
    * Also clears the session check interval associated with the iframe.
-   */
+  */
   const destroyIframe = () => {
     if (currentIframe && currentIframe.parentNode) {
       currentIframe.parentNode.removeChild(currentIframe);
@@ -198,70 +252,53 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
 
 
   /**
-   * Establishes a connection to a specified component by creating and loading an iframe.
-   *
-   * This asynchronous function initializes the WebSDK with a valid session, validates
-   * the session token, determines the appropriate iframe URL based on the given
-   * component name, and creates the iframe with the specified source URL.
-   *
-   * @param {string} componentName - The name of the component to connect to.
-   *        Valid values are defined in the ComponentNameEnum.
-   *
-   * @returns {Promise<HTMLIFrameElement | void>} A promise that resolves to the created
-   *          iframe element, or void if an error occurs.
-   *
-   * @throws {Error} Throws an error if the session token is invalid or if the
-   *         specified component name is unknown.
+   * Stops the session expiry check scheduled by {@link startSessionExpiryCheck}.
+   * This is useful when the iframe is destroyed or the session is manually
+   * invalidated.
    */
-  const loadComponent = async (componentName: string): Promise<HTMLIFrameElement | void> => {
-    console.log('componentName(Web SDK): ', componentName);
-
-    let postMessageData: ISdkPostMessagePayload = {
-      source: "NUVEI_FRONTEND_SDK",
-      type: "SDK_COMMUNICATION",
-      data: {
-        frontendAccessToken: "",
-        publishableKey,
-        componentName: "ON_BOARDING",
-        other: null
-      }
-    };
-
-    try {
-      const accessToken = await getClientSession();
-
-      //Check If Opaque Token is Valid
-      if (!sdkConfig.sessionValidation(accessToken)) {
-        throw new Error("Opaque Token is not valid");
-      }
-
-      // if session token is valid
-      postMessageData.data.frontendAccessToken = accessToken;
-
-      // Determine the URL based on componentName
-      switch (componentName) {
-        case ComponentNameEnum.DOC_UTILITY:
-          iframeUrl = `${DEFAULT_CONFIG.baseUrls.docUtility}?publishableKey=${publishableKey}`;
-          break;
-
-        case ComponentNameEnum.ON_BOARDING: {
-          iframeUrl = `${DEFAULT_CONFIG.baseUrls.onBoarding}?publishableKey=${publishableKey}`;
-          break;
-        }
-
-        default:
-          throw new Error("Unknown component name");
-      }
-
-      // Create and load the iframe in the container
-      const iframe = await createIframeWithSource(iframeUrl);
-      currentIframe = iframe;
-      sendMessageToMicroFrontend(postMessageData);
-      return iframe;
-
-    } catch (error) {
-      console.error("Error initializing WebSDK:", error);
+  const stopSessionExpiryCheck = () => {
+    if (sessionCheckInterval) {
+      clearInterval(sessionCheckInterval);
+      sessionCheckInterval = null;
     }
+  };
+
+
+  /**
+   * Sends a message to the iframe containing the micro-frontend.
+   *
+   * @param {ISdkPostMessagePayload} payload - The message payload to send.
+   *
+   * @remarks
+   * This function is used to communicate with the micro-frontend. It is
+   * expected that the micro-frontend will register an event listener for
+   * the 'message' event on the `window` object and listen for messages
+   * sent by this function.
+   *
+   * The payload should include the following properties:
+   * - source: The source of the message (e.g. 'NUVEI_FRONTEND_SDK').
+   * - type: The type of the message (e.g. 'SDK_COMMUNICATION').
+   * - data: The data to be sent with the message.
+   *
+   * @example
+   * import { sendMessageToMicroFrontend } from '@nuvei/websdk';
+   *
+   * sendMessageToMicroFrontend({
+   *   source: 'NUVEI_FRONTEND_SDK',
+   *   type: 'SDK_COMMUNICATION',
+   *   data: {
+   *     foo: 'bar',
+   *   },
+   * });
+ */
+  const sendMessageToMicroFrontend = (payload: ISdkPostMessagePayload) => {
+    if (!currentIframe || !currentIframe.contentWindow) {
+      console.warn("Iframe is not initialized or not available");
+      return;
+    }
+
+    console.log("Sending message to microfrontend:", payload);
+    currentIframe.contentWindow.postMessage(payload, iframeUrl);
   };
 
 
@@ -287,15 +324,7 @@ export default async function loadAndInitialize(params: INuveiInitParams): Promi
   }
 
 
-  const sendMessageToMicroFrontend = (payload: ISdkPostMessagePayload) => {
-    if (!currentIframe || !currentIframe.contentWindow) {
-      console.warn("Iframe is not initialized or not available");
-      return;
-    }
 
-    console.log("Sending message to microfrontend:", payload);
-    currentIframe.contentWindow.postMessage(payload, iframeUrl);
-  };
 
 
   return {
