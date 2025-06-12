@@ -56,7 +56,7 @@ var default_config_1 = require("../config/default-config");
 var axios_1 = __importDefault(require("axios"));
 function loadAndInitialize(params) {
     return __awaiter(this, void 0, void 0, function () {
-        var publishableKey, fetchClientSession, config, sdkConfig, currentSessionId, currentIframe, tokenExpiryTime, sessionCheckInterval, expiryTimeout, retryAttempts, MAX_RETRIES, iframeUrl, startSessionExpiryCheck, stopSessionExpiryCheck, getClientSession, createIframeWithSource, destroyIframe, loadComponent, logout, sendMessageToMicroFrontend;
+        var publishableKey, fetchClientSession, config, sdkConfig, currentSessionId, currentIframe, tokenExpiryTime, sessionCheckInterval, expiryTimeout, retryAttempts, MAX_RETRIES, iframeUrl, loadComponent, getClientSession, createIframeWithSource, startSessionExpiryCheck, destroyIframe, stopSessionExpiryCheck, sendMessageToMicroFrontend, logout;
         var _this = this;
         return __generator(this, function (_a) {
             publishableKey = params.publishableKey, fetchClientSession = params.fetchClientSession, config = params.config;
@@ -68,136 +68,8 @@ function loadAndInitialize(params) {
             expiryTimeout = null;
             retryAttempts = 0;
             MAX_RETRIES = 3;
-            startSessionExpiryCheck = function () { return __awaiter(_this, void 0, void 0, function () {
-                var expiryTime, now, delay;
-                var _this = this;
-                return __generator(this, function (_a) {
-                    try {
-                        expiryTime = new Date(tokenExpiryTime);
-                        now = new Date();
-                        delay = expiryTime.getTime() - now.getTime();
-                        console.log("Scheduling expiry check in", delay / (1000 * 60), "minutes");
-                        if (delay <= 0) {
-                            console.log('retryAttempts: ', retryAttempts);
-                            if (retryAttempts >= MAX_RETRIES) {
-                                // console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
-                                stopSessionExpiryCheck();
-                                destroyIframe();
-                                return [2 /*return*/];
-                            }
-                            retryAttempts++;
-                            // console.warn(`Token already expired. Attempt ${retryAttempts} of ${MAX_RETRIES}. Getting new session...`);
-                            return [2 /*return*/, startSessionExpiryCheck()]; // Retry
-                        }
-                        if (expiryTimeout) {
-                            clearTimeout(expiryTimeout);
-                        }
-                        expiryTimeout = setTimeout(function () { return __awaiter(_this, void 0, void 0, function () {
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        // console.warn("Token expired. Getting new session...");
-                                        console.log('retryAttempts >= MAX_RETRIES: ', retryAttempts >= MAX_RETRIES);
-                                        if (retryAttempts >= MAX_RETRIES) {
-                                            console.warn("Max retry attempts (".concat(MAX_RETRIES, ") reached. Stopping session check."));
-                                            stopSessionExpiryCheck();
-                                            destroyIframe();
-                                            return [2 /*return*/];
-                                        }
-                                        return [4 /*yield*/, fetchClientSession()];
-                                    case 1:
-                                        _a.sent(); // renew or destroy iframe if fails
-                                        startSessionExpiryCheck(); // reschedule with the new expiry
-                                        return [2 /*return*/];
-                                }
-                            });
-                        }); }, delay);
-                    }
-                    catch (err) {
-                        console.error("Failed to schedule session check:", err);
-                        destroyIframe(); // fallback: kill iframe on error
-                    }
-                    return [2 /*return*/];
-                });
-            }); };
-            stopSessionExpiryCheck = function () {
-                if (sessionCheckInterval) {
-                    clearInterval(sessionCheckInterval);
-                    sessionCheckInterval = null;
-                }
-            };
-            getClientSession = function () { return __awaiter(_this, void 0, void 0, function () {
-                var session, error_1;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            _a.trys.push([0, 2, , 3]);
-                            return [4 /*yield*/, fetchClientSession()];
-                        case 1:
-                            session = _a.sent();
-                            if (!(sdkConfig === null || sdkConfig === void 0 ? void 0 : sdkConfig.sessionValidation(session.accessToken))) {
-                                throw new Error("Invalid session token");
-                            }
-                            currentSessionId = session.accessToken;
-                            tokenExpiryTime = session.accessTokenExpiry;
-                            return [2 /*return*/, currentSessionId];
-                        case 2:
-                            error_1 = _a.sent();
-                            console.error("Session validation failed:", error_1);
-                            throw error_1;
-                        case 3: return [2 /*return*/];
-                    }
-                });
-            }); };
-            createIframeWithSource = function (url) {
-                return new Promise(function (resolve, reject) {
-                    var container = document.getElementById(default_config_1.DEFAULT_CONFIG.containerId);
-                    if (!container) {
-                        return reject(new Error("Container with ID ".concat(default_config_1.DEFAULT_CONFIG.containerId, " not found")));
-                    }
-                    // Check if an iframe with the same ID already exists
-                    var iframe = document.getElementById(default_config_1.DEFAULT_CONFIG.iframeId);
-                    if (iframe) {
-                        console.log("nc-js: Iframe already exists, reusing it.");
-                        resolve(iframe);
-                        return;
-                    }
-                    // If iframe doesn't exist, create it
-                    iframe = document.createElement('iframe');
-                    iframe.src = url;
-                    iframe.id = default_config_1.DEFAULT_CONFIG.iframeId;
-                    // Apply styles
-                    Object.assign(iframe.style, sdkConfig.defaultIframeStyles);
-                    if (sdkConfig.customStyles) {
-                        Object.assign(iframe.style, sdkConfig.customStyles);
-                    }
-                    // Event handlers
-                    iframe.onload = function () {
-                        console.log("Iframe loaded successfully");
-                        // currentIframe = iframe;
-                        // Start session expiry check when iframe loads
-                        startSessionExpiryCheck();
-                        resolve(iframe);
-                    };
-                    iframe.onerror = function () {
-                        reject(new Error("Iframe failed to load"));
-                    };
-                    container.appendChild(iframe);
-                });
-            };
-            destroyIframe = function () {
-                if (currentIframe && currentIframe.parentNode) {
-                    currentIframe.parentNode.removeChild(currentIframe);
-                    currentIframe = null;
-                }
-                // Clear the session check interval when iframe is destroyed
-                if (sessionCheckInterval) {
-                    clearInterval(sessionCheckInterval);
-                    sessionCheckInterval = null;
-                }
-            };
             loadComponent = function (componentName) { return __awaiter(_this, void 0, void 0, function () {
-                var postMessageData, accessToken, iframe, error_2;
+                var postMessageData, accessToken, iframe, error_1;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
@@ -243,13 +115,147 @@ function loadAndInitialize(params) {
                             sendMessageToMicroFrontend(postMessageData);
                             return [2 /*return*/, iframe];
                         case 4:
-                            error_2 = _a.sent();
-                            console.error("Error initializing WebSDK:", error_2);
+                            error_1 = _a.sent();
+                            console.error("Error initializing WebSDK:", error_1);
                             return [3 /*break*/, 5];
                         case 5: return [2 /*return*/];
                     }
                 });
             }); };
+            getClientSession = function () { return __awaiter(_this, void 0, void 0, function () {
+                var session, error_2;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 2, , 3]);
+                            return [4 /*yield*/, fetchClientSession()];
+                        case 1:
+                            session = _a.sent();
+                            if (!(sdkConfig === null || sdkConfig === void 0 ? void 0 : sdkConfig.sessionValidation(session.accessToken))) {
+                                throw new Error("Invalid session token");
+                            }
+                            currentSessionId = session.accessToken;
+                            tokenExpiryTime = session.accessTokenExpiry;
+                            return [2 /*return*/, currentSessionId];
+                        case 2:
+                            error_2 = _a.sent();
+                            console.error("Session validation failed:", error_2);
+                            throw error_2;
+                        case 3: return [2 /*return*/];
+                    }
+                });
+            }); };
+            createIframeWithSource = function (url) {
+                return new Promise(function (resolve, reject) {
+                    var container = document.getElementById(default_config_1.DEFAULT_CONFIG.containerId);
+                    if (!container) {
+                        return reject(new Error("Container with ID ".concat(default_config_1.DEFAULT_CONFIG.containerId, " not found")));
+                    }
+                    // Check if an iframe with the same ID already exists
+                    var iframe = document.getElementById(default_config_1.DEFAULT_CONFIG.iframeId);
+                    if (iframe) {
+                        console.log("nc-js: Iframe already exists, reusing it.");
+                        resolve(iframe);
+                        return;
+                    }
+                    // If iframe doesn't exist, create it
+                    iframe = document.createElement('iframe');
+                    iframe.src = url;
+                    iframe.id = default_config_1.DEFAULT_CONFIG.iframeId;
+                    // Apply styles
+                    Object.assign(iframe.style, sdkConfig.defaultIframeStyles);
+                    if (sdkConfig.customStyles) {
+                        Object.assign(iframe.style, sdkConfig.customStyles);
+                    }
+                    // Event handlers
+                    iframe.onload = function () {
+                        console.log("Iframe loaded successfully");
+                        // currentIframe = iframe;
+                        // Start session expiry check when iframe loads
+                        startSessionExpiryCheck();
+                        resolve(iframe);
+                    };
+                    iframe.onerror = function () {
+                        reject(new Error("Iframe failed to load"));
+                    };
+                    container.appendChild(iframe);
+                });
+            };
+            startSessionExpiryCheck = function () { return __awaiter(_this, void 0, void 0, function () {
+                var expiryTime, now, delay;
+                var _this = this;
+                return __generator(this, function (_a) {
+                    try {
+                        expiryTime = new Date(tokenExpiryTime);
+                        now = new Date();
+                        delay = expiryTime.getTime() - now.getTime();
+                        // console.log("Scheduling expiry check in", delay / (1000 * 60), "minutes");
+                        if (delay <= 0) {
+                            if (retryAttempts >= MAX_RETRIES) {
+                                // console.warn(`Max retry attempts (${MAX_RETRIES}) reached. Stopping session check.`);
+                                stopSessionExpiryCheck();
+                                destroyIframe();
+                                return [2 /*return*/];
+                            }
+                            retryAttempts++;
+                            // console.warn(`Token already expired. Attempt ${retryAttempts} of ${MAX_RETRIES}. Getting new session...`);
+                            return [2 /*return*/, startSessionExpiryCheck()]; // Retry
+                        }
+                        if (expiryTimeout) {
+                            clearTimeout(expiryTimeout);
+                        }
+                        expiryTimeout = setTimeout(function () { return __awaiter(_this, void 0, void 0, function () {
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0:
+                                        // console.warn("Token expired. Getting new session...");
+                                        if (retryAttempts >= MAX_RETRIES) {
+                                            console.warn("Max retry attempts (".concat(MAX_RETRIES, ") reached. Stopping session check."));
+                                            stopSessionExpiryCheck();
+                                            destroyIframe();
+                                            return [2 /*return*/];
+                                        }
+                                        return [4 /*yield*/, fetchClientSession()];
+                                    case 1:
+                                        _a.sent(); // renew or destroy iframe if fails
+                                        startSessionExpiryCheck(); // reschedule with the new expiry
+                                        return [2 /*return*/];
+                                }
+                            });
+                        }); }, delay);
+                    }
+                    catch (err) {
+                        console.error("Failed to schedule session check:", err);
+                        destroyIframe(); // fallback: kill iframe on error
+                    }
+                    return [2 /*return*/];
+                });
+            }); };
+            destroyIframe = function () {
+                if (currentIframe && currentIframe.parentNode) {
+                    currentIframe.parentNode.removeChild(currentIframe);
+                    currentIframe = null;
+                }
+                // Clear the session check interval when iframe is destroyed
+                if (sessionCheckInterval) {
+                    clearInterval(sessionCheckInterval);
+                    sessionCheckInterval = null;
+                }
+            };
+            stopSessionExpiryCheck = function () {
+                if (sessionCheckInterval) {
+                    clearInterval(sessionCheckInterval);
+                    sessionCheckInterval = null;
+                }
+            };
+            sendMessageToMicroFrontend = function (payload) {
+                if (!currentIframe || !currentIframe.contentWindow) {
+                    console.warn("Iframe is not initialized or not available");
+                    return;
+                }
+                console.log("Sending message to microfrontend:", payload);
+                currentIframe.contentWindow.postMessage(payload, iframeUrl);
+            };
             logout = function () { return __awaiter(_this, void 0, void 0, function () {
                 var response, _a;
                 return __generator(this, function (_b) {
@@ -268,15 +274,6 @@ function loadAndInitialize(params) {
                     }
                 });
             }); };
-            sendMessageToMicroFrontend = function (payload) {
-                console.log('currentIframe: ', currentIframe);
-                if (!currentIframe || !currentIframe.contentWindow) {
-                    console.warn("Iframe is not initialized or not available");
-                    return;
-                }
-                console.log("Sending message to microfrontend:", payload);
-                currentIframe.contentWindow.postMessage(payload, iframeUrl);
-            };
             return [2 /*return*/, {
                     loadComponent: loadComponent,
                     destroyIframe: destroyIframe,
